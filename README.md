@@ -11,6 +11,8 @@ jar -cvf Jolt_1.0.0.jar *
 Move output jar into ImageJ plugins folder
 
 ## Usage
+
 Added functions will be able to be used in ImageJ\
 Plugins >> Hageter >> *\
 Plugins >> DacksLab >> *\
+
