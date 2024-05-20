@@ -14,5 +14,5 @@ Move output jar into ImageJ plugins folder
 
 Added functions will be able to be used in ImageJ\
 Plugins >> Hageter >> *\
-Plugins >> DacksLab >> *\
+Plugins >> DacksLab >> *
 
