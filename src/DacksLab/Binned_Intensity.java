@@ -224,7 +224,6 @@ public class Binned_Intensity implements PlugInFilter {
 
     private double getMaxIntensity(ArrayList<BinData> bins) {
         double maxI = Double.MIN_VALUE;
-        Roi binWithMaxIntensity = null;
 
         for (BinData bin : bins) {
             // Get the intensity within the current bin
