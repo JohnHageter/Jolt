@@ -42,6 +42,7 @@ public class xgroupROIs implements DialogListener, PlugIn {
         }
     }
 
+
     public boolean setup() {
         gd = new GenericDialog("Group ROIs by polygon selection");
         if (gd.wasCanceled()) {
@@ -62,6 +63,7 @@ public class xgroupROIs implements DialogListener, PlugIn {
                     }
                 }
             });
+
 
             for (int i = 0; i < currentGroups; i++) {
                 gd.addStringField("Group #" + (i + 1) + ": ", "");
