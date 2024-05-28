@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="dd181272-e293-4d20-9909-41fabcb9d508" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/src/CalciumImaging/plugins.config" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/CalciumImaging/GroupROIs.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/CalciumImaging/GroupROIs.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/plugins.config" beforeDir="false" afterPath="$PROJECT_DIR$/src/plugins.config" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.toplevel_testIJ.executor": "Run",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "D:/Jolt/src/CalciumImaging"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\Jolt\src\CalciumImaging" />
+    </key>
+  </component>
+  <component name="TaskManager">
+    <servers />
+  </component>
+</project>
