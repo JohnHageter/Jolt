@@ -31,9 +31,9 @@ public class toplevel_testIJ {
         rm.runCommand("Open", cellRoiFile.getAbsolutePath());
 
 
-        GroupROIs gR = new GroupROIs();
+        SelectMultiple gR = new SelectMultiple();
 
-        gR.setup(null,imp);
+        //gR.setup(null,imp);
         gR.run(null);
 
 
