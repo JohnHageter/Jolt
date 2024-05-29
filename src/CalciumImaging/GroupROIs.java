@@ -15,6 +15,7 @@ import java.awt.TextField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Vector;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
@@ -59,7 +60,6 @@ public class GroupROIs implements PlugInFilter, DialogListener {
             this.rm = RoiManager.getInstance();
         }
 
-
         return DOES_ALL;
     }
 
@@ -75,14 +75,30 @@ public class GroupROIs implements PlugInFilter, DialogListener {
         this.groupingRM = new RoiManager(false);
         if (params && this.gd.wasOKed()) {
             for (String group : this.groupNames) {
-                applyGroup(group);
+                if(group.isEmpty()){
+                } else{
+                    applyGroup(group);
+                }
             }
             Roi[] cellROIs = this.rm.getRoisAsArray();
-            for (Roi cell : cellROIs){
-                for (String name : this.groupNames){
-                    if (!cell.getName().contains(name) || !cell.getName().contains("NULL")){
-                        this.rm.select(this.rm.getIndex(cell.getName()));
-                        this.rm.runCommand("Rename", cell.getName() + "_" + "NULL");
+
+            for (Roi cell : cellROIs) {
+                boolean nameFound = false;
+                for (String name : this.groupNames) {
+                    if (cell.getName().contains(name)) {
+                        nameFound = true;
+                        break;
+                    }
+                }
+                if (!nameFound) {
+                    String newName = cell.getName() + "_NULL";
+                    int index = this.rm.getIndex(cell.getName());
+                    if (index != -1) {
+                        this.rm.select(index);
+                        this.rm.runCommand("Rename", newName);
+                        System.out.println("Renamed ROI: " + cell.getName() + " to " + newName);
+                    } else {
+                        System.out.println("ROI not found in manager: " + cell.getName());
                     }
                 }
             }
@@ -112,62 +128,65 @@ public class GroupROIs implements PlugInFilter, DialogListener {
         this.compositeROIs.addRoi(groupingROI);
         this.imp.updateAndDraw();
 
-
         for (Roi cell : cellROIs) {
             if (groupingROI.contains((int) cell.getBounds().getCenterX(), (int) cell.getBounds().getCenterY())) {
                 this.rm.select(this.rm.getIndex(cell.getName()));
                 this.rm.runCommand("Rename", cell.getName() + "_" + group);
             }
         }
-
     }
 
     public boolean inputParameters() throws BackingStoreException {
         loadParameters();
-        createDialog();
-
-        while (!this.gd.wasOKed()) {
-            updateGroupNamesFromDialog();
-            saveParameters();
-        }
-        return true;
+        return createDialog();
     }
 
-    private void createDialog() {
-        this.gd = new GenericDialog("Group ROIs by selection");
-        this.gd.addButton("Add group", e -> {
-            nGroups++;
-            try {
-                updateDialog();
-            } catch (BackingStoreException ex) {
-                throw new RuntimeException(ex);
-            }
-        });
-        this.gd.addButton("Remove group", e -> {
-            if (nGroups > 1) {
-                nGroups--;
+    private boolean createDialog() throws BackingStoreException {
+        boolean okPressed = false;
+
+        while (!okPressed) {
+            this.gd = new GenericDialog("Group ROIs by selection");
+            this.gd.addButton("Add group", e -> {
+                this.nGroups++;
                 try {
                     updateDialog();
                 } catch (BackingStoreException ex) {
                     throw new RuntimeException(ex);
                 }
-            }
-        });
+            });
+            this.gd.addButton("Remove group", e -> {
+                if (this.nGroups > 1) {
+                    this.nGroups--;
+                    try {
+                        updateDialog();
+                    } catch (BackingStoreException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
+            });
 
-        for (int i = 0; i < this.nGroups; i++) {
-            String groupName = (i < this.groupNames.size()) ? this.groupNames.get(i) : DEFAULT_NAME;
-            this.gd.addStringField("Group #" + (i + 1) + ": ", groupName);
+            for (int i = 0; i < this.nGroups; i++) {
+                String groupName = (i < this.groupNames.size()) ? this.groupNames.get(i) : DEFAULT_NAME;
+                this.gd.addStringField("Group #" + (i + 1) + ": ", groupName);
+            }
+
+            this.gd.addDialogListener(this);
+            this.gd.showDialog();
+
+            if (this.gd.wasOKed()) {
+                updateGroupNamesFromDialog();
+                saveParameters();
+                okPressed = true;
+            }
         }
 
-        this.gd.addDialogListener(this);
-        this.gd.showDialog();
+        return okPressed;
     }
 
     private void updateDialog() throws BackingStoreException {
         updateGroupNamesFromDialog();
         saveParameters();
         this.gd.dispose();
-        createDialog();
     }
 
     private void loadParameters() {
@@ -185,7 +204,7 @@ public class GroupROIs implements PlugInFilter, DialogListener {
         prefs.putInt(PREF_NUM_GROUPS, this.nGroups);
 
         for (int i = 0; i < this.groupNames.size(); i++) {
-            if (!Objects.equals(this.groupNames.get(i), "")){
+            if (!Objects.equals(this.groupNames.get(i), "")) {
                 prefs.put(PREF_GROUP_NAME + i, this.groupNames.get(i));
             }
         }
@@ -193,14 +212,13 @@ public class GroupROIs implements PlugInFilter, DialogListener {
 
     private void updateGroupNamesFromDialog() {
         this.groupNames.clear();
-        List<?> stringFields = this.gd.getStringFields();
+        Vector<?> stringFieldsVector = this.gd.getStringFields();
 
-        for (Object field : stringFields) {
-            TextField textField = (TextField) field;
-            String text = textField.getText().trim();
-
-            if (!text.isEmpty()) {
-                this.groupNames.add(text);
+        for (Object field : stringFieldsVector) {
+            if (field instanceof TextField) {
+                TextField textField = (TextField) field;
+                String text = textField.getText().trim();
+                this.groupNames.add(text.isEmpty() ? DEFAULT_NAME : text);
             }
         }
 
@@ -209,13 +227,13 @@ public class GroupROIs implements PlugInFilter, DialogListener {
         }
     }
 
-    private Color colorRandomizer(){
+    private Color colorRandomizer() {
         Random random = new Random();
         int r = random.nextInt(256);
         int g = random.nextInt(256);
         int b = random.nextInt(256);
 
-        return new Color(r,g,b);
+        return new Color(r, g, b);
     }
 
     @Override
