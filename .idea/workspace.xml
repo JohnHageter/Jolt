@@ -4,12 +4,20 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
+<<<<<<< HEAD
     <list default="true" id="761d26de-6b99-4aba-b3af-32f375dcfb0e" name="Changes" comment="" />
+=======
+    <list default="true" id="a2452458-a282-4b80-8ae4-709ed63157f8" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/src/CalciumImaging/SelectMultiple.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/CalciumImaging/SelectMultiple.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/toplevel_testIJ.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/toplevel_testIJ.java" afterDir="false" />
+    </list>
+>>>>>>> fb74ca07caaf6f52d9c0f6fd53060e226a9b27b9
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+<<<<<<< HEAD
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
@@ -58,14 +66,18 @@
     </recent_temporary>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+=======
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.toplevel_testIJ.executor": "Run",
+    "git-widget-placeholder": "development"
+  }
+}]]></component>
+>>>>>>> fb74ca07caaf6f52d9c0f6fd53060e226a9b27b9
   <component name="TaskManager">
-    <task active="true" id="Default" summary="Default task">
-      <changelist id="761d26de-6b99-4aba-b3af-32f375dcfb0e" name="Changes" comment="" />
-      <created>1716935526539</created>
-      <option name="number" value="Default" />
-      <option name="presentableId" value="Default" />
-      <updated>1716935526539</updated>
-    </task>
     <servers />
   </component>
 </project>

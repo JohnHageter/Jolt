@@ -53,23 +53,14 @@ public class SelectMultiple implements PlugIn {
         }
 
         // Have Image and cellROIs as array. Multi-Select ROIs
-
         IJ.setTool("Multi-Point");
         (new WaitForUserDialog("Group ROIs", "Select " + appendName + "\nThen click OK.")).show();
-
 
         FloatPolygon points = ((PolygonRoi) im.getRoi()).getFloatPolygon();
         if (points == null) {
             IJ.error("No points selected.");
             return;
         }
-
-//        Calibration cal = im.getCalibration();
-//        String unit = cal.getUnit();
-
-        //points = selected points ,,, cellROIs = cell mask in ROI manager
-        IJ.log("Number of cell Rois: " + cellRois.length);
-        IJ.log("Number of points selected: " + points.npoints);
 
         double[][] distances = new double[cellRois.length][points.npoints];
         for (int cell=0; cell<cellRois.length; cell++){
@@ -88,27 +79,23 @@ public class SelectMultiple implements PlugIn {
                     minCellIndex = cell;
                 }
             }
-            // Log the minimum distance and the corresponding cell ROI
-            //IJ.log("Minimum distance for point " + (point + 1) + ": " + minDistance);
+
             if (minCellIndex != -1) {
-                //IJ.log("Cell ROI with minimum distance: " + cellRois[minCellIndex].getName());
-                //Roi foundCell = (Roi) cellRois[minCellIndex].clone();
                 rm.rename(rm.getRoiIndex(cellRois[minCellIndex]),
                         cellRois[minCellIndex].getName() + "_" + appendName);
                 rm.select(rm.getRoiIndex(cellRois[minCellIndex]));
                 rm.runCommand("Set Color", "magenta");
                 rm.runCommand("Set Line Width", "2");
-                //IJ.log("Index " + minCellIndex);
-                //rm.select(minCellIndex);
-                //rm.runCommand("Delete");
-                //foundCell.setName(cellRois[minCellIndex].getName() + "_" + appendName);
-                //IJ.log("New ROI name: " + foundCell.getName());
-                //rm.addRoi(foundCell);
             } else {
                 IJ.log("No cell ROI found.");
             }
         }
 
+        for (Roi cell : cellRois){
+            if (!cell.getName().contains(appendName)) {
+                rm.rename(rm.getIndex(cell.getName()), cell.getName() + "_NULL");
+            }
+        }
 
     }
 
@@ -118,7 +105,6 @@ public class SelectMultiple implements PlugIn {
             double dy = y2 - y1;
             double squaredDistance = dx * dx + dy * dy;
             return Math.sqrt(squaredDistance);
-
     }
 
 }
