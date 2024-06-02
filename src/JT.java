@@ -1,4 +1,3 @@
-import Jolt.CellManager;
 import ij.*;
 import CalciumImaging.*;
 import ij.plugin.frame.RoiManager;
@@ -14,6 +13,7 @@ public class JT {
         File mapFile = new File(map);
 
         new ImageJ();
+<<<<<<< HEAD
         //ImagePlus imp = IJ.openImage(mapFile.getAbsolutePath());
 
 //        if (imp != null) {
@@ -29,6 +29,9 @@ public class JT {
         CellManager cM = new CellManager();
 
         cM.run("");
+=======
+        CellManager cm = new CellManager();
+>>>>>>> 7074810e5b594ac7286e3b714e4ccdf2b2339009
 
 
     }
