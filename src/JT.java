@@ -1,3 +1,4 @@
+import Jolt.CellManager;
 import ij.*;
 import CalciumImaging.*;
 import ij.plugin.frame.RoiManager;
@@ -13,27 +14,21 @@ public class JT {
         File mapFile = new File(map);
 
         new ImageJ();
-        ImagePlus imp = IJ.openImage(mapFile.getAbsolutePath());
+        //ImagePlus imp = IJ.openImage(mapFile.getAbsolutePath());
 
-        if (imp != null) {
-            imp.show();
-        }
+//        if (imp != null) {
+//            imp.show();
+//        }
 
-        RoiManager rm = RoiManager.getInstance();
+        //RoiManager rm = RoiManager.getInstance();
 
-        if (rm == null) {
-            rm = new RoiManager();
-        }
+        //if (rm == null) {
+        //    rm = new RoiManager();
+        //}
 
+        CellManager cM = new CellManager();
 
-        IJ.run("ROI Manager...");
-        rm.runCommand("Open", cellRoiFile.getAbsolutePath());
-
-
-        SelectMultiple gR = new SelectMultiple();
-
-        //gR.setup(null,imp);
-        gR.run(null);
+        cM.run("");
 
 
     }
