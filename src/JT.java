@@ -1,12 +1,11 @@
 import Jolt.CellManager;
 import ij.*;
 import CalciumImaging.*;
-import DacksLab.*;
 import ij.plugin.frame.RoiManager;
 
 import java.io.File;
 
-public class toplevel_testIJ {
+public class JT {
 
     public static void main(String[] args){
         String cellRois = "resources/CellMap_rois.zip";
