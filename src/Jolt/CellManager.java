@@ -179,6 +179,15 @@ public class CellManager extends PlugInFrame implements ActionListener, ItemList
         cellTabs.remove(groupIndex);
     }
 
+//    addButton("Add cell [t]");
+//    addButton("Remove cell [x]");
+//    addButton("Add group");
+//    addButton("Remove group");
+//    addButton("Open...");
+//    addButton("Save...");
+//    addButton("Rename");
+//    addButton("More...");
+
     public void actionPerformed(ActionEvent e) {
         String command = e.getActionCommand();
         switch (command) {
@@ -187,6 +196,29 @@ public class CellManager extends PlugInFrame implements ActionListener, ItemList
                 break;
             case "Remove group":
                 removeGroupTab();
+                break;
+            case "Add cell [t]":
+                IJ.log("Cant do that yet");
+                break;
+            case "Remove cell [x]":
+                IJ.log("Cant do that yet");
+                break;
+            case "Open...":
+                IJ.open();
+                break;
+            case "Save...":
+                if(cellList.getModel().getSize() == 0){
+                    IJ.save(IJ.getDir(null));
+                    break;
+                } else if (cellList.getModel().getSize() > 0){
+                    ImagePlus imp = IJ.getImage();
+                    IJ.save(imp.getFileInfo().directory);
+                }
+                IJ.save(null);
+                break;
+            case "Rename":
+                IJ.log("not implemented");
+                cellList.getSelectedIndex();
                 break;
             case "More...":
                 Point ploc = buttonPanel.getLocation();
