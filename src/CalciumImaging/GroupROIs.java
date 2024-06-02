@@ -128,10 +128,12 @@ public class GroupROIs implements PlugInFilter, DialogListener {
         this.compositeROIs.addRoi(groupingROI);
         this.imp.updateAndDraw();
 
+        int index = 0;
         for (Roi cell : cellROIs) {
             if (groupingROI.contains((int) cell.getBounds().getCenterX(), (int) cell.getBounds().getCenterY())) {
                 this.rm.select(this.rm.getIndex(cell.getName()));
-                this.rm.runCommand("Rename", cell.getName() + "_" + group);
+                this.rm.runCommand("Rename", "Cell_" + index + "_" + group);
+                index++;
             }
         }
     }

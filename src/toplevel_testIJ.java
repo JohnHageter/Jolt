@@ -1,3 +1,4 @@
+import Jolt.CellManager;
 import ij.*;
 import CalciumImaging.*;
 import DacksLab.*;
@@ -14,27 +15,7 @@ public class toplevel_testIJ {
         File mapFile = new File(map);
 
         new ImageJ();
-        ImagePlus imp = IJ.openImage(mapFile.getAbsolutePath());
-
-        if (imp != null) {
-            imp.show();
-        }
-
-        RoiManager rm = RoiManager.getInstance();
-
-        if (rm == null) {
-            rm = new RoiManager();
-        }
-
-
-        IJ.run("ROI Manager...");
-        rm.runCommand("Open", cellRoiFile.getAbsolutePath());
-
-
-        SelectMultiple gR = new SelectMultiple();
-
-        //gR.setup(null,imp);
-        gR.run(null);
+        CellManager cm = new CellManager();
 
 
     }
