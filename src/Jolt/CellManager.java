@@ -8,6 +8,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.geom.GeneralPath;
 import java.util.Iterator;
 
 import ij.*;
@@ -35,6 +36,7 @@ public class CellManager extends PlugInFrame implements ActionListener, ItemList
 
     private JList cellList;
     private DefaultListModel cellListModel;
+    private GeneralPath savePath = new GeneralPath();
 
 
     public String errorMsg;
@@ -208,7 +210,7 @@ public class CellManager extends PlugInFrame implements ActionListener, ItemList
                 break;
             case "Save...":
                 if(cellList.getModel().getSize() == 0){
-                    IJ.save(IJ.getDir(null));
+                    error("Cell list is empty");
                     break;
                 } else if (cellList.getModel().getSize() > 0){
                     ImagePlus imp = IJ.getImage();
@@ -230,6 +232,11 @@ public class CellManager extends PlugInFrame implements ActionListener, ItemList
         }
     }
 
+    boolean error(String msg) {
+        new MessageDialog(this, "Cell Manager", msg);
+        Macro.abort();
+        return false;
+    }
 
     public void mouseClicked(MouseEvent e) {
 
