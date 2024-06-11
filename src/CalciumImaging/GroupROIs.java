@@ -96,9 +96,9 @@ public class GroupROIs implements PlugInFilter, DialogListener {
                     if (index != -1) {
                         this.rm.select(index);
                         this.rm.runCommand("Rename", newName);
-                        System.out.println("Renamed ROI: " + cell.getName() + " to " + newName);
+                        IJ.log("Renamed ROI: " + cell.getName() + " to " + newName);
                     } else {
-                        System.out.println("ROI not found in manager: " + cell.getName());
+                        IJ.log("ROI not found in manager: " + cell.getName());
                     }
                 }
             }
@@ -129,11 +129,19 @@ public class GroupROIs implements PlugInFilter, DialogListener {
         this.imp.updateAndDraw();
 
         int index = 0;
+
         for (Roi cell : cellROIs) {
-            if (groupingROI.contains((int) cell.getBounds().getCenterX(), (int) cell.getBounds().getCenterY())) {
-                this.rm.select(this.rm.getIndex(cell.getName()));
-                this.rm.runCommand("Rename", "Cell_" + index + "_" + group);
-                index++;
+            if(cell.getName().contains("Cell")) {
+                if (groupingROI.contains((int) cell.getBounds().getCenterX(), (int) cell.getBounds().getCenterY())) {
+                    this.rm.select(this.rm.getIndex(cell.getName()));
+                    this.rm.runCommand("Rename", cell.getName() + "_" + group);
+                }
+            } else {
+                if (groupingROI.contains((int) cell.getBounds().getCenterX(), (int) cell.getBounds().getCenterY())) {
+                    this.rm.select(this.rm.getIndex(cell.getName()));
+                    this.rm.runCommand("Rename", "Cell_" + index + "_" + group);
+                    index++;
+                }
             }
         }
     }
