@@ -47,8 +47,8 @@ public class toplevel_testIJ {
     }
 
     private static void processFile() throws IOException, FormatException {
-        CAFileProcessor ca = new CAFileProcessor();
-        File run = new File("resources/f03_RSD/Run_00001.tif");
+        FileProcessor ca = new FileProcessor();
+        File run = new File("resources/f08_LSD/Run_00001.tif");
 
         ImageReader reader = new ImageReader();
         IMetadata metadata = MetadataTools.createOMEXMLMetadata();
