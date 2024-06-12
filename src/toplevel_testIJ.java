@@ -1,7 +1,6 @@
 import Jolt.CellManager;
 import ij.*;
-import CalciumImaging.*;
-import DacksLab.*;
+import Annotation.*;
 import ij.plugin.frame.RoiManager;
 import loci.formats.FormatException;
 import loci.formats.ImageReader;
