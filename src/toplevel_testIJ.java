@@ -1,4 +1,5 @@
 import Jolt.CellManager;
+import Processing.FileProcessor;
 import ij.*;
 import Annotation.*;
 import ij.plugin.frame.RoiManager;
@@ -18,8 +19,8 @@ public class toplevel_testIJ {
     private static final File mapFile = new File("resources/CellMap.tif");
     public static void main(String[] args) throws IOException, FormatException {
         new ImageJ();
-        //runGroupROIs();
-        processFile();
+        CellManager cM = new CellManager();
+        cM.run("");
     }
 
     //Test Functions

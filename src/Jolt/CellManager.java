@@ -1,6 +1,6 @@
 package Jolt;
 
-import ij.gui.GenericDialog;
+import Processing.FileProcessor;
 import ij.plugin.frame.PlugInFrame;
 
 import javax.swing.*;
@@ -12,15 +12,9 @@ import java.awt.geom.GeneralPath;
 import java.util.Iterator;
 
 import ij.*;
-import ij.process.*;
 import ij.gui.*;
-import ij.io.*;
-import ij.plugin.filter.*;
-import ij.plugin.*;
-import ij.util.*;
-import ij.macro.*;
-import ij.measure.*;
-import ij.plugin.OverlayCommands;
+
+import Annotation.*;
 
 public class CellManager extends PlugInFrame implements ActionListener, ItemListener, MouseListener, MouseWheelListener, ListSelectionListener, Iterable<Roi> {
     private static final int BUTTONS = 7;
@@ -148,6 +142,7 @@ public class CellManager extends PlugInFrame implements ActionListener, ItemList
     void addMoreMenu(){
         popupMenu = new PopupMenu();
         GUI.scalePopupMenu(popupMenu);
+        addMoreMenuItem("Process stack series");
         addMoreMenuItem("Multi-select annotate");
         addMoreMenuItem("Group-select annotate");
         addMoreMenuItem("Measure multiple");
@@ -189,6 +184,10 @@ public class CellManager extends PlugInFrame implements ActionListener, ItemList
 //    addButton("Save...");
 //    addButton("Rename");
 //    addButton("More...");
+//    addMoreMenuItem("Process stack series");
+//    addMoreMenuItem("Multi-select annotate");
+//    addMoreMenuItem("Group-select annotate");
+//    addMoreMenuItem("Measure multiple");
 
     public void actionPerformed(ActionEvent e) {
         String command = e.getActionCommand();
@@ -213,10 +212,8 @@ public class CellManager extends PlugInFrame implements ActionListener, ItemList
                     error("Cell list is empty");
                     break;
                 } else if (cellList.getModel().getSize() > 0){
-                    ImagePlus imp = IJ.getImage();
-                    IJ.save(imp.getFileInfo().directory);
+                    IJ.save(null);
                 }
-                IJ.save(null);
                 break;
             case "Rename":
                 IJ.log("not implemented");
@@ -227,8 +224,37 @@ public class CellManager extends PlugInFrame implements ActionListener, ItemList
                 Point bloc = moreButton.getLocation();
                 popupMenu.show(this, ploc.x, bloc.y);
                 break;
+            case "Process stack series":
+                //TODO Figure out why align slices halts at waitforuserdialog
+                if(IJ.getImage() != null) {
+                    FileProcessor fP = new FileProcessor();
+                    fP.setup("", IJ.getImage());
+                    fP.run(IJ.getImage().getProcessor());
+                } else {
+                    IJ.noImage();
+                }
+                break;
+            case "Multi-select annotate":
+                SelectMultiple sP = new SelectMultiple();
+                sP.run("");
+                break;
+            case "Group-select annotate":
+                runGroupAnnotate(IJ.getImage());
+                break;
+            case "Measure multiple":
+                break;
             default:
                 break;
+        }
+    }
+
+    private void runGroupAnnotate(ImagePlus image) {
+        if(image != null){
+            GroupROIs gR = new GroupROIs();
+            gR.setup("", image);
+            gR.run(image.getProcessor());
+        } else {
+            IJ.noImage();
         }
     }
 
