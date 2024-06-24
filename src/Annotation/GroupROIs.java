@@ -31,23 +31,10 @@ public class GroupROIs implements PlugInFilter, DialogListener {
     private static final String PREF_GROUP_NAME = "GroupName";
     private static final String DEFAULT_NAME = "";
     ArrayList<String> groupNames = new ArrayList<>();
+    ArrayList<Roi> groupingRois = new ArrayList<>();
 
     private static final String PREF_NUM_GROUPS = "NumGroups";
     private int nGroups = 1;
-
-    static class CellData {
-        public Roi cell;
-        public boolean inPoly;
-        public int centerX;
-        public int centerY;
-
-        public CellData(Roi cell, boolean inPoly, int centerX, int centerY) {
-            this.cell = cell;
-            this.inPoly = inPoly;
-            this.centerY = centerY;
-            this.centerX = centerX;
-        }
-    }
 
     @Override
     public int setup(String arg, ImagePlus imp) {
@@ -64,7 +51,7 @@ public class GroupROIs implements PlugInFilter, DialogListener {
 
     @Override
     public void run(ImageProcessor ip) {
-        boolean params = false;
+        boolean params;
         try {
             params = inputParameters();
         } catch (BackingStoreException e) {
@@ -73,36 +60,47 @@ public class GroupROIs implements PlugInFilter, DialogListener {
 
         this.groupingRM = new RoiManager(false);
         if (params && this.gd.wasOKed()) {
+            int cellIndex = 0;
+            Roi[] cellROIs = this.rm.getRoisAsArray();
+
+            for (Roi cell : cellROIs){
+                if(!cell.getName().contains("Cell_")){
+                    this.rm.select(this.rm.getIndex(cell.getName()));
+                    this.rm.runCommand("Rename", "Cell_" + cellIndex + "_");
+                    cellIndex++;
+                }
+            }
+
             for (String group : this.groupNames) {
-                if(group.isEmpty()){
-                } else{
+                if(!group.isEmpty()){
                     applyGroup(group);
                 }
             }
-            Roi[] cellROIs = this.rm.getRoisAsArray();
 
+            //rename non slected cells to *_NULL
             for (Roi cell : cellROIs) {
-                boolean nameFound = false;
-                for (String name : this.groupNames) {
-                    if (cell.getName().contains(name)) {
-                        nameFound = true;
-                        break;
+                boolean named = false;
+                for (Roi group : this.groupingRois) {
+                    int cellCenterX = (int) cell.getBounds().getCenterX();
+                    int cellCenterY = (int) cell.getBounds().getCenterY();
+                    if (group.contains(cellCenterX, cellCenterY)){
+                        if(named) {
+                            IJ.log("Warning: " + cell.getName() + " was found in multiple groups");
+                        }
+                        named = true;
                     }
                 }
-                if (!nameFound) {
-                    String newName = cell.getName() + "_NULL";
-                    int index = this.rm.getIndex(cell.getName());
-                    if (index != -1) {
-                        this.rm.select(index);
-                        this.rm.runCommand("Rename", newName);
-                        IJ.log("Renamed ROI: " + cell.getName() + " to " + newName);
-                    } else {
-                        IJ.log("ROI not found in manager: " + cell.getName());
-                    }
+
+                if(!named) {
+                    this.rm.select(this.rm.getIndex(cell.getName()));
+                    this.rm.runCommand("Rename", cell.getName() + "NULL");
                 }
             }
 
         }
+
+
+        this.rm.runCommand("Save...", IJ.getDirectory("current")+"annotated.zip");
     }
 
     private void applyGroup(String group) {
@@ -126,21 +124,12 @@ public class GroupROIs implements PlugInFilter, DialogListener {
         this.groupingRM.addRoi(groupingROI);
         this.compositeROIs.addRoi(groupingROI);
         this.imp.updateAndDraw();
-
-        int index = 0;
+        this.groupingRois.add(groupingROI);
 
         for (Roi cell : cellROIs) {
-            if(cell.getName().contains("Cell")) {
-                if (groupingROI.contains((int) cell.getBounds().getCenterX(), (int) cell.getBounds().getCenterY())) {
-                    this.rm.select(this.rm.getIndex(cell.getName()));
-                    this.rm.runCommand("Rename", cell.getName() + "_" + group);
-                }
-            } else {
-                if (groupingROI.contains((int) cell.getBounds().getCenterX(), (int) cell.getBounds().getCenterY())) {
-                    this.rm.select(this.rm.getIndex(cell.getName()));
-                    this.rm.runCommand("Rename", "Cell_" + index + "_" + group);
-                    index++;
-                }
+            if (groupingROI.contains((int) cell.getBounds().getCenterX(), (int) cell.getBounds().getCenterY())) {
+                this.rm.select(this.rm.getIndex(cell.getName()));
+                this.rm.runCommand("Rename", cell.getName() + group);
             }
         }
     }
@@ -152,8 +141,9 @@ public class GroupROIs implements PlugInFilter, DialogListener {
 
     private boolean createDialog() throws BackingStoreException {
         boolean okPressed = false;
+        boolean canceled = false;
 
-        while (!okPressed) {
+        while (!okPressed && !canceled) {
             this.gd = new GenericDialog("Group ROIs by selection");
             this.gd.addButton("Add group", e -> {
                 this.nGroups++;
@@ -187,6 +177,11 @@ public class GroupROIs implements PlugInFilter, DialogListener {
                 saveParameters();
                 okPressed = true;
             }
+            if(this.gd.wasCanceled()){
+                canceled = true;
+                return canceled;
+            }
+
         }
 
         return okPressed;

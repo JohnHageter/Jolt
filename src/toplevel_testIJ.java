@@ -1,3 +1,4 @@
+import Analysis.RelativeFluoresence;
 import Jolt.CellManager;
 import Processing.FileProcessor;
 import ij.*;
@@ -11,21 +12,35 @@ import loci.plugins.BF;
 import loci.plugins.in.ImporterOptions;
 import ome.xml.meta.IMetadata;
 
+
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 
 public class toplevel_testIJ {
-    private static final File cellRoiFile = new File("resources/CellMap_rois.zip");
-    private static final File mapFile = new File("resources/CellMap.tif");
+    private static final File cellRoiFile = new File("resources/f08_LSD/CellMap_rois.zip");
+    private static final File mapFile = new File("resources/f08_LSD/CellMap.tif");
+    private static final File runFile = new File("resources/f08_LSD/Registered.tif");
     public static void main(String[] args) throws IOException, FormatException {
         new ImageJ();
-        CellManager cM = new CellManager();
-        cM.run("");
+        RoiManager rm = new RoiManager();
+        rm.runCommand("Open", cellRoiFile.getAbsolutePath());
+        //ImagePlus imp = IJ.openImage(mapFile.getAbsolutePath());
+        ImagePlus imp = IJ.openImage(runFile.getAbsolutePath());
+        imp.show();
+
+        runAnalysis();
     }
 
     //Test Functions
     private static void runCellManager() {
         CellManager cm = new CellManager();
+    }
+
+    private static void runAnalysis(){
+        RelativeFluoresence rf = new RelativeFluoresence();
+        rf.setup("", IJ.getImage());
+        rf.run(IJ.getProcessor());
     }
 
     private static void runCaPipe() {
@@ -35,14 +50,7 @@ public class toplevel_testIJ {
 
     private static void runGroupROIs(){
         GroupROIs gR = new GroupROIs();
-        RoiManager rm = new RoiManager();
-
-        rm.runCommand("Open", cellRoiFile.getAbsolutePath());
-        IJ.log(cellRoiFile.getAbsolutePath());
-
-
-        ImagePlus imp = IJ.openImage(mapFile.getAbsolutePath());
-        imp.show();
+        //IJ.log(cellRoiFile.getAbsolutePath());
         gR.setup("",IJ.getImage());
         gR.run(IJ.getProcessor());
     }
@@ -57,7 +65,6 @@ public class toplevel_testIJ {
         reader.setId(run.getAbsolutePath());
 
         boolean isInterleaved = reader.isInterleaved();
-        IJ.log("Is the image interleaved? " + isInterleaved);
 
         ImporterOptions opts = new ImporterOptions();
         opts.setId(run.getAbsolutePath());
