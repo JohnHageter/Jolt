@@ -20,7 +20,7 @@ import java.io.IOException;
 public class toplevel_testIJ {
     private static final File cellRoiFile = new File("resources/f08_LSD/CellMap_rois.zip");
     private static final File mapFile = new File("resources/f08_LSD/CellMap.tif");
-    private static final File runFile = new File("resources/f08_LSD/Registered.tif");
+    private static final File runFile = new File("resources/f08_LSD/Substack (60-100).tif");
     public static void main(String[] args) throws IOException, FormatException {
         new ImageJ();
         RoiManager rm = new RoiManager();

@@ -1,16 +1,25 @@
 package Analysis;
 
+import com.google.common.collect.Table;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
+import ij.gui.Plot;
 import ij.gui.Roi;
 import ij.plugin.filter.PlugInFilter;
 import ij.plugin.frame.RoiManager;
 import ij.process.ImageProcessor;
 
+import java.awt.*;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Random;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
+import java.util.stream.IntStream;
+
+import Utility.CellData;
+import ij.process.ImageStatistics;
 
 
 public class RelativeFluoresence implements PlugInFilter {
@@ -25,11 +34,15 @@ public class RelativeFluoresence implements PlugInFilter {
     private static final String PREF_STIMULUS_NAMES = "Stimulus Names";
     private static final String PREF_ITERATIONS = "Iteration";
     private static final String PREF_METHOD = "Method";
-    private String baseline = "1-60";
-    private String stimulus = "60:3,120:3,180:3";
-    private String stimNames = "Off,On";
+    private String baselineInput = "1-60";
+    private String stimulusInput = "60-63,120-123,180-183";
+    private String stimNamesInput = "Off,On,Off";
     private int iterations = 2;
     private int method = 0;
+    private ArrayList<String> stimPoints;
+    private ArrayList<String> stimPointNames;
+    private int beginBaseline;
+    private int endBaseline;
 
     @Override
     public int setup(String s, ImagePlus imagePlus) {
@@ -50,6 +63,144 @@ public class RelativeFluoresence implements PlugInFilter {
 
         if(params){
             IJ.log("We made it here so far");
+            getAnalysisParameters();
+            measureMultipleCells();
+        }
+    }
+
+    private void measureMultipleCells() {
+        Roi[] rois = this.rm.getRoisAsArray();
+        ArrayList<CellData> cellRois = new ArrayList<CellData>();
+        for (Roi roi : rois) {
+            cellRois.add(new CellData(roi));
+        }
+
+        for (CellData cell : cellRois) {
+            double sum = 0;
+            int count = 0;
+
+            for (int slice = this.beginBaseline; slice <= this.endBaseline; slice++){
+                this.imp.setSlice(slice);
+                ImageStatistics stat = this.imp.getStatistics();
+                ImageProcessor ip = this.imp.getProcessor();
+                ip.setRoi(cell.roi);
+
+                sum += stat.mean * stat.pixelCount;
+                count += stat.pixelCount;
+            }
+
+            double fnot = sum/count;
+            cell.setFnot(fnot);
+        }
+
+        Plot plot = new Plot("Relative Fluoresence", "Slice", "Delta F/F");
+        double[] slices = seq(1, this.imp.getNSlices(), 1);
+
+
+        double maxDf=0;
+        double minDf=0;
+        for (CellData cell : cellRois) {
+            double[] df = new double[this.imp.getStackSize()];
+
+            for (int slice = 0; slice < this.imp.getStackSize(); slice++) {
+                ImageStatistics stats = this.imp.getStatistics();
+                ImageProcessor ip = this.imp.getProcessor();
+                ip.setRoi(cell.roi);
+                this.imp.setRoi(cell.roi);
+                this.imp.updateImage();
+                this.imp.setSlice(slice);
+                df[slice] = (stats.mean-cell.fnot) / cell.fnot;
+
+                if(df[slice]>maxDf){
+                    maxDf=df[slice];
+                }
+
+                if(df[slice]<minDf){
+                    minDf=df[slice];
+                }
+
+            }
+
+            cell.setDf(df);
+            plot.addPoints(slices, cell.getDf(), Plot.LINE);
+            plot.setLineWidth(2);
+            plot.setColor(randomColor());
+        }
+
+        plot.setLimits(1, this.imp.getNSlices(),minDf-(minDf*0.05),maxDf+(maxDf*0.2));
+        ImagePlus plotImage = plot.getImagePlus();
+        plotImage.show();
+
+    }
+
+    public double[] getRelativeFluoresnce(ImagePlus input, Roi cell) {
+        double sum = 0;
+        int count = 0;
+
+        for (int slice = this.beginBaseline; slice <= this.endBaseline; slice++){
+            input.setSlice(slice);
+            ImageStatistics stat = input.getStatistics();
+            ImageProcessor ip = input.getProcessor();
+            ip.setRoi(cell);
+
+            sum += stat.mean * stat.pixelCount;
+            count += stat.pixelCount;
+        }
+
+        double fnot = sum/count;
+        double[] df = new double[input.getStackSize()];
+        double[] se = new double[input.getStackSize()];
+
+        for (int slice = 1; slice < input.getStackSize(); slice++) {
+            input.setSlice(slice);
+            ImageStatistics stat = input.getStatistics();
+            ImageProcessor ip = input.getProcessor();
+            ip.setRoi(cell);
+
+            double cellMean = stat.mean;
+
+            df[slice-1] = (cellMean - fnot) / fnot;
+            se[slice-1] = stat.stdDev / Math.sqrt(stat.pixelCount);
+        }
+
+        return df;
+    }
+
+    private void getAnalysisParameters() {
+        if(parseInput(this.baselineInput, "-").size() == 2) {
+            this.beginBaseline = Integer.parseInt(parseInput(this.baselineInput, "-").get(0));
+            this.endBaseline = Integer.parseInt(parseInput(this.baselineInput, "-").get(1));
+        } else {
+            IJ.log("Invalid baseline input. Only single range allowed");
+            return;
+        }
+
+
+        this.stimPoints = parseInput(this.stimulusInput, ",");
+        this.stimPointNames = parseInput(this.stimNamesInput, ",");
+        int diff = this.stimPoints.size() - this.stimPointNames.size();
+
+        if (diff > 0) {
+            //more points than names
+            for (int i = 0; i < diff; i++){
+                this.stimPointNames.add("N/A");
+            }
+        } else if (diff < 0){
+            //more names than points
+            for (int i = 1; i <= Math.abs(diff); i++){
+                this.stimPointNames.remove(this.stimPointNames.size()-1);
+            }
+            IJ.log("Removed extra names");
+        }
+
+        IJ.log("Baseline Begin:" + this.beginBaseline + ", Baseline End:" + this.endBaseline + "\n");
+
+        for (String point : this.stimPoints) {
+            IJ.log("Stimulus point: " + point);
+        }
+
+        for (String name : this.stimPointNames){
+            IJ.log("Stimulus Name: " + name);
         }
     }
 
@@ -61,18 +212,18 @@ public class RelativeFluoresence implements PlugInFilter {
         gd.addMessage("All parameters are optional. Leave blank if excluded");
         gd.addNumericField("Iterations:", this.iterations);
         gd.addMessage("Input timeframe as range from beginning frame to end frame separated with '-' (ex. 1-60)");
-        gd.addStringField("Baseline timeframe", this.baseline);
-        gd.addMessage("Input stimulus as frames points with a duration to search separated by a comma (ex. 60:3,120:3)\nThis will average relative intensity change from frame 60-63 and 120-123");
-        gd.addStringField("Stimulus time(s)", this.stimulus);
-        gd.addStringField("Stimulus Names", this.stimNames);
+        gd.addStringField("Baseline timeframe", this.baselineInput);
+        gd.addMessage("Input stimulus as frames points with a duration to search separated by a comma (ex. 60-63,120-123)\nThis will average relative intensity change from frame 60-63 and 120-123");
+        gd.addStringField("Stimulus time(s)", this.stimulusInput);
+        gd.addStringField("Stimulus Names", this.stimNamesInput);
         gd.addChoice("Response call method", method, method[this.method]);
         gd.showDialog();
 
         if(gd.wasOKed()){
             this.iterations = (int) gd.getNextNumber();
-            this.baseline = gd.getNextString();
-            this.stimulus = gd.getNextString();
-            this.stimNames = gd.getNextString();
+            this.baselineInput = gd.getNextString();
+            this.stimulusInput = gd.getNextString();
+            this.stimNamesInput = gd.getNextString();
             this.method = gd.getNextChoiceIndex();
             saveParameters();
             return true;
@@ -80,23 +231,43 @@ public class RelativeFluoresence implements PlugInFilter {
 
         return false;
     }
+    
+    private ArrayList<String> parseInput(String input, String delimiter) {
+        return new ArrayList<>(Arrays.asList(input.split(delimiter)));
+    }
 
     private void loadParameters() {
         Preferences prefs = Preferences.userNodeForPackage(RelativeFluoresence.class);
         this.iterations = prefs.getInt(PREF_ITERATIONS, this.iterations);
-        this.baseline = prefs.get(PREF_BASELINE, this.baseline);
-        this.stimulus = prefs.get(PREF_STIMULUS, this.stimulus);
-        this.stimNames = prefs.get(PREF_STIMULUS_NAMES, this.stimNames);
+        this.baselineInput = prefs.get(PREF_BASELINE, this.baselineInput);
+        this.stimulusInput = prefs.get(PREF_STIMULUS, this.stimulusInput);
+        this.stimNamesInput = prefs.get(PREF_STIMULUS_NAMES, this.stimNamesInput);
         this.method = prefs.getInt(PREF_METHOD, this.method);
     }
 
     private void saveParameters() throws BackingStoreException {
         Preferences prefs = Preferences.userNodeForPackage(RelativeFluoresence.class);
         prefs.clear();
-        prefs.put(PREF_BASELINE, this.baseline);
-        prefs.put(PREF_STIMULUS, this.stimulus);
-        prefs.put(PREF_STIMULUS_NAMES, this.stimNames);
+        prefs.put(PREF_BASELINE, this.baselineInput);
+        prefs.put(PREF_STIMULUS, this.stimulusInput);
+        prefs.put(PREF_STIMULUS_NAMES, this.stimNamesInput);
         prefs.putInt(PREF_ITERATIONS, this.iterations);
         prefs.putInt(PREF_METHOD, this.method);
+    }
+
+    private double[] seq(int begin, int end, int by){
+        double[] sequence = new double[end/by];
+        for (int i = begin; i < end; i+=by){
+            sequence[i] = i;
+        }
+        return sequence;
+    }
+
+    private Color randomColor() {
+        Random random = new Random();
+        int red = random.nextInt(256);
+        int green = random.nextInt(256);
+        int blue = random.nextInt(256);
+        return new Color(red, green, blue);
     }
 }
