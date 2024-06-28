@@ -1,4 +1,4 @@
-import Analysis.RelativeFluoresence;
+import Analysis.*;
 import Jolt.CellManager;
 import Processing.FileProcessor;
 import ij.*;
@@ -38,7 +38,7 @@ public class toplevel_testIJ {
     }
 
     private static void runAnalysis(){
-        RelativeFluoresence rf = new RelativeFluoresence();
+        RelativeFluorescence rf = new RelativeFluorescence();
         rf.setup("", IJ.getImage());
         rf.run(IJ.getProcessor());
     }
