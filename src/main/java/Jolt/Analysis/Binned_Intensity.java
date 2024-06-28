@@ -1,4 +1,4 @@
-package Analysis;
+package Jolt.Analysis;
 
 
 import ij.IJ;

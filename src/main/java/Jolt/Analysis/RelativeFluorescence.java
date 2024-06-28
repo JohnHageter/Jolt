@@ -1,15 +1,16 @@
-package Analysis;
+package Jolt.Analysis;
 
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
 import ij.gui.Plot;
 import ij.gui.Roi;
+import ij.measure.ResultsTable;
 import ij.plugin.filter.PlugInFilter;
 import ij.plugin.frame.RoiManager;
 import ij.process.ImageProcessor;
 import ij.process.ImageStatistics;
-import Utility.CellData;
+import Jolt.Utility.CellData;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -21,7 +22,7 @@ import java.util.prefs.Preferences;
 public class RelativeFluorescence implements PlugInFilter {
     private ImagePlus imp;
     private RoiManager rm;
-    private int numFrames;
+    private ArrayList<CellData> cellRois;
 
     private static final String PREF_BASELINE = "Baseline";
     private static final String PREF_STIMULUS = "Stimulus";
@@ -58,22 +59,44 @@ public class RelativeFluorescence implements PlugInFilter {
                 IJ.log("We made it here so far");
                 getAnalysisParameters();
                 measureMultipleCells();
+                outputData();
             }
         } catch (BackingStoreException e) {
             throw new RuntimeException(e);
         }
     }
 
+    private void outputData() {
+        ResultsTable rt = new ResultsTable();
+
+        int index = 0;
+        for (CellData cell : this.cellRois){
+            String[] subParts = cell.breakName("_");
+
+            for (String part : subParts) {
+                rt.addValue("var_" + index, part);
+                index++;
+            }
+
+            for(int i = 0; i < this.imp.getStackSize(); i++){
+                rt.addValue("Slice_" + i+1, cell.getDf(i));
+            }
+            rt.incrementCounter();
+            index=0;
+        }
+        rt.show("Results");
+    }
+
     private void measureMultipleCells() {
         Roi[] rois = this.rm.getRoisAsArray();
-        ArrayList<CellData> cellRois = new ArrayList<>();
+        this.cellRois = new ArrayList<>();
         this.groupPlot = new Plot("Relative Fluorescence", "Slice", "Delta F/F");
 
         for (Roi roi : rois) {
-            cellRois.add(new CellData(roi));
+            this.cellRois.add(new CellData(roi));
         }
 
-        for (CellData cell : cellRois) {
+        for (CellData cell : this.cellRois) {
             double sum = 0;
             int count = 0;
 
@@ -95,7 +118,7 @@ public class RelativeFluorescence implements PlugInFilter {
         double maxDf = 0;
         double minDf = 0;
 
-        for (CellData cell : cellRois) {
+        for (CellData cell : this.cellRois) {
             double[] df = new double[this.imp.getStackSize()];
 
             for (int slice = 1; slice <= this.imp.getStackSize(); slice++) {
@@ -104,7 +127,7 @@ public class RelativeFluorescence implements PlugInFilter {
                 ip.setRoi(cell.roi);
                 ImageStatistics stats = ip.getStatistics();
 
-                df[slice - 1] = (stats.mean - cell.fnot) / cell.fnot;
+                df[slice - 1] = (stats.mean - cell.getFnot()) / cell.getFnot();
 
                 if (df[slice - 1] > maxDf) {
                     maxDf = df[slice - 1];
@@ -121,12 +144,13 @@ public class RelativeFluorescence implements PlugInFilter {
                 this.groupPlot.setLineWidth(2);
                 this.groupPlot.setColor(randomColor());
 
+            } else {
+                cell.setDf(df);
             }
         }
 
         if(plot){
             this.groupPlot.setLimits(1, this.imp.getNSlices(), minDf - (minDf * 0.05), maxDf + (maxDf * 0.2));
-
             this.plotImage = this.groupPlot.getImagePlus();
             this.plotImage.show();
         }

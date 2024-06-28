@@ -1,5 +1,4 @@
-
-package Annotation;
+package Jolt.Annotation;
 
 import ij.IJ;
 import ij.ImagePlus;

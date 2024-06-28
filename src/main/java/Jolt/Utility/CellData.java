@@ -1,4 +1,4 @@
-package Utility;
+package Jolt.Utility;
 
 import ij.ImagePlus;
 import ij.gui.Roi;
@@ -7,11 +7,11 @@ import ij.process.ImageStatistics;
 
 public class CellData {
     public Roi roi;
-    public String name;
-    public int centerX;
-    public int centerY;
-    public double fnot;
-    public double[] df;
+    private String name;
+    private int centerX;
+    private int centerY;
+    private double fnot;
+    private double[] df;
 
     public CellData(){
     }
@@ -39,18 +39,29 @@ public class CellData {
         return df;
     }
 
+    public double getDf(int index){
+        return df[index];
+    }
+
     public void setFnot(double fnot){
         this.fnot = fnot;
     }
+
+    public double getFnot(){return this.fnot;}
 
     public void setDf(double[] df){
         this.df = df;
     }
 
+    public String[] breakName(String delimiter) {
+        return this.getName().split(delimiter);
+    }
+
     public String printData() {
         return "Cell Data{" +
-                "Center X= " + centerX +
-                ", Center Y= " + centerY +
+                "Name= " + this.name +
+                "Center X= " + this.centerX +
+                ", Center Y= " + this.centerY +
                 "}";
     }
 

@@ -1,8 +1,8 @@
-import Analysis.*;
-import Jolt.CellManager;
-import Processing.FileProcessor;
+import Jolt.Analysis.*;
+import Jolt.Utility.CellManager;
+import Jolt.Processing.FileProcessor;
 import ij.*;
-import Annotation.*;
+import Jolt.Annotation.*;
 import ij.plugin.frame.RoiManager;
 import loci.formats.FormatException;
 import loci.formats.ImageReader;
@@ -13,7 +13,6 @@ import loci.plugins.in.ImporterOptions;
 import ome.xml.meta.IMetadata;
 
 
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 

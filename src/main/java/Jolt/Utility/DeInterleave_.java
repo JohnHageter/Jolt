@@ -1,4 +1,4 @@
-package Utility;
+package Jolt.Utility;
 
 /* Russell Kincaid, rekincai@syr.edu, November 15, 2002.
  * hacked from Slice_Multiplier.java etc.

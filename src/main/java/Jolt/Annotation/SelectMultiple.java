@@ -1,4 +1,4 @@
-package Annotation;
+package Jolt.Annotation;
 
 
 import ij.IJ;

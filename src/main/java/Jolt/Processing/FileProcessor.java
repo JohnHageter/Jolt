@@ -1,4 +1,4 @@
-package Processing;
+package Jolt.Processing;
 
 import ij.*;
 import ij.gui.GenericDialog;
