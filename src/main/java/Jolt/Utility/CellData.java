@@ -1,9 +1,6 @@
 package Jolt.Utility;
 
-import ij.ImagePlus;
 import ij.gui.Roi;
-import ij.process.ImageProcessor;
-import ij.process.ImageStatistics;
 
 public class CellData {
     public Roi roi;

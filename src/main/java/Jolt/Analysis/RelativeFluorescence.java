@@ -1,7 +1,9 @@
 package Jolt.Analysis;
 
+import com.google.common.collect.Table;
 import ij.IJ;
 import ij.ImagePlus;
+import ij.ImageStack;
 import ij.gui.GenericDialog;
 import ij.gui.Plot;
 import ij.gui.Roi;
@@ -23,6 +25,7 @@ public class RelativeFluorescence implements PlugInFilter {
     private ImagePlus imp;
     private RoiManager rm;
     private ArrayList<CellData> cellRois;
+    private ArrayList<ImagePlus> iteration;
 
     private static final String PREF_BASELINE = "Baseline";
     private static final String PREF_STIMULUS = "Stimulus";
@@ -34,7 +37,7 @@ public class RelativeFluorescence implements PlugInFilter {
     private String baselineInput = "1-60";
     private String stimulusInput = "60-63,120-123,180-183";
     private String stimNamesInput = "Off,On,Off";
-    private int iterations = 2;
+    private int nIterations = 2;
     private int method = 0;
     private Boolean plot = true;
     private Plot groupPlot;
@@ -56,13 +59,86 @@ public class RelativeFluorescence implements PlugInFilter {
     public void run(ImageProcessor imageProcessor) {
         try {
             if (inputParameters()) {
-                IJ.log("We made it here so far");
+
                 getAnalysisParameters();
-                measureMultipleCells();
+                splitRuns();
+
+                ArrayList<ArrayList<CellData>> outputData = new ArrayList<>();
+                for (int i = 0; i < this.nIterations; i++) {
+                    ImagePlus imp = this.iteration.get(i);
+                    ArrayList<CellData> output = measureMultipleCells(imp);
+                    outputData.add(output);
+                }
+
+                this.cellRois = averageRunData(outputData);
                 outputData();
             }
         } catch (BackingStoreException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private ArrayList<CellData> averageRunData(ArrayList<ArrayList<CellData>> dat) {
+        int stackSize = this.imp.getStackSize() / this.nIterations;
+        ArrayList<CellData> retDat = new ArrayList<>();
+
+        // Initialize the CellData list with empty CellData objects
+        for (int i = 0; i < dat.get(0).size(); i++) {
+            CellData cellData = new CellData(dat.get(0).get(i).roi);
+            cellData.setDf(new double[stackSize]);
+            retDat.add(cellData);
+            IJ.log(cellData.printData());
+        }
+
+        // Iterate over each CellData object in the list
+        for (ArrayList<CellData> data : dat) {
+            for (int j = 0; j < data.size(); j++) {
+                double[] oldDf = data.get(j).getDf();
+                double[] newDf = retDat.get(j).getDf();
+
+                for (int k = 0; k < stackSize; k++) {
+                    newDf[k] += oldDf[k];
+                }
+            }
+        }
+
+        // Divide by the number of iterations to get the average
+        for (CellData cellData : retDat) {
+            double[] newDf = cellData.getDf();
+            for (int l = 0; l < stackSize; l++) {
+                newDf[l] /= this.nIterations;
+            }
+        }
+
+        return retDat;
+    }
+
+    private void splitRuns() {
+        int nSlice = this.imp.getNSlices();
+        ArrayList<ImageStack> stacks = new ArrayList<>();
+        int subStackNSlices = nSlice / this.nIterations;
+
+        if (nSlice % this.nIterations != 0) {
+            IJ.showMessage("Error", "Iteration number not a divisor of the stack size.");
+            return;
+        }
+
+        for (int i = 0; i < this.nIterations; i++) {
+            ImageStack subStack = new ImageStack(this.imp.getWidth(), this.imp.getHeight());
+            for (int j = 0; j < subStackNSlices; j++) {
+                int slice = (i * subStackNSlices) + j + 1;
+                this.imp.setSlice(slice);
+                ImageProcessor ip = this.imp.getProcessor().duplicate(); // Ensure we duplicate the processor
+                subStack.addSlice(ip);
+            }
+            stacks.add(subStack);
+        }
+
+        this.iteration = new ArrayList<>(this.nIterations);
+        for (int i = 0; i < stacks.size(); i++) {
+            ImagePlus subImp = new ImagePlus(this.imp.getTitle() + "_" + (i + 1), stacks.get(i));
+            this.iteration.add(subImp);
+            subImp.show();
         }
     }
 
@@ -72,58 +148,56 @@ public class RelativeFluorescence implements PlugInFilter {
         int index = 0;
         for (CellData cell : this.cellRois){
             String[] subParts = cell.breakName("_");
+            rt.incrementCounter();
 
             for (String part : subParts) {
                 rt.addValue("var_" + index, part);
                 index++;
             }
 
-            for(int i = 0; i < this.imp.getStackSize(); i++){
-                rt.addValue("Slice_" + i+1, cell.getDf(i));
+            for(int i = 0; i < this.imp.getStackSize() / this.nIterations; i++){
+                rt.addValue("Slice_" + (i+1), cell.getDf(i));
             }
-            rt.incrementCounter();
             index=0;
         }
         rt.show("Results");
     }
 
-    private void measureMultipleCells() {
+    private ArrayList<CellData> measureMultipleCells(ImagePlus imp) {
         Roi[] rois = this.rm.getRoisAsArray();
-        this.cellRois = new ArrayList<>();
-        this.groupPlot = new Plot("Relative Fluorescence", "Slice", "Delta F/F");
+        ArrayList<CellData> cells = new ArrayList<>();
+        Plot iterPlot = new Plot("Relative Fluorescence " + imp.getTitle(), "Slice", "Delta F/F");
 
         for (Roi roi : rois) {
-            this.cellRois.add(new CellData(roi));
+            cells.add(new CellData(roi));
         }
 
-        for (CellData cell : this.cellRois) {
+        for (CellData cell : cells) {
             double sum = 0;
             int count = 0;
 
             for (int slice = this.beginBaseline; slice <= this.endBaseline; slice++) {
-                this.imp.setSlice(slice);
-                ImageProcessor ip = this.imp.getProcessor();
+                imp.setSlice(slice);
+                ImageProcessor ip = imp.getProcessor();
                 ip.setRoi(cell.roi);
                 ImageStatistics stat = ip.getStatistics();
 
                 sum += stat.mean * stat.pixelCount;
                 count += stat.pixelCount;
             }
-
             double fnot = sum / count;
             cell.setFnot(fnot);
         }
 
-
         double maxDf = 0;
         double minDf = 0;
 
-        for (CellData cell : this.cellRois) {
-            double[] df = new double[this.imp.getStackSize()];
+        for (CellData cell : cells) {
+            double[] df = new double[imp.getStackSize()];
 
-            for (int slice = 1; slice <= this.imp.getStackSize(); slice++) {
-                this.imp.setSlice(slice);
-                ImageProcessor ip = this.imp.getProcessor();
+            for (int slice = 1; slice <= imp.getStackSize(); slice++) {
+                imp.setSlice(slice);
+                ImageProcessor ip = imp.getProcessor();
                 ip.setRoi(cell.roi);
                 ImageStatistics stats = ip.getStatistics();
 
@@ -138,22 +212,23 @@ public class RelativeFluorescence implements PlugInFilter {
             }
 
             if (plot){
-                double[] slices = seq(1, this.imp.getNSlices(), 1);
+                double[] slices = seq(1, imp.getNSlices(), 1);
                 cell.setDf(df);
-                this.groupPlot.addPoints(slices, cell.getDf(), Plot.LINE);
-                this.groupPlot.setLineWidth(2);
-                this.groupPlot.setColor(randomColor());
-
+                iterPlot.addPoints(slices, cell.getDf(), Plot.LINE);
+                iterPlot.setLineWidth(2);
+                iterPlot.setColor(randomColor());
+                iterPlot.setLimits(1, imp.getNSlices(), minDf - (minDf * 0.05), maxDf + (maxDf * 0.2));
+                plotImage = iterPlot.getImagePlus();
             } else {
                 cell.setDf(df);
             }
         }
 
-        if(plot){
-            this.groupPlot.setLimits(1, this.imp.getNSlices(), minDf - (minDf * 0.05), maxDf + (maxDf * 0.2));
-            this.plotImage = this.groupPlot.getImagePlus();
-            this.plotImage.show();
+        if(plotImage != null){
+            plotImage.show();
         }
+
+        return cells;
     }
 
     private void getAnalysisParameters() {
@@ -197,7 +272,7 @@ public class RelativeFluorescence implements PlugInFilter {
         loadParameters();
         GenericDialog gd = new GenericDialog("Relative Fluorescence analysis");
         gd.addMessage("All parameters are optional. Leave blank if excluded");
-        gd.addNumericField("Iterations:", this.iterations);
+        gd.addNumericField("Iterations:", this.nIterations);
         gd.addMessage("Input timeframe as range from beginning frame to end frame separated with '-' (ex. 1-60)");
         gd.addStringField("Baseline timeframe", this.baselineInput);
         gd.addMessage("Input stimulus as frames points with a duration to search separated by a comma (ex. 60-63,120-123)\nThis will average relative intensity change from frame 60-63 and 120-123");
@@ -208,7 +283,7 @@ public class RelativeFluorescence implements PlugInFilter {
         gd.showDialog();
 
         if (gd.wasOKed()) {
-            this.iterations = (int) gd.getNextNumber();
+            this.nIterations = (int) gd.getNextNumber();
             this.baselineInput = gd.getNextString();
             this.stimulusInput = gd.getNextString();
             this.stimNamesInput = gd.getNextString();
@@ -227,7 +302,7 @@ public class RelativeFluorescence implements PlugInFilter {
 
     private void loadParameters() {
         Preferences prefs = Preferences.userNodeForPackage(RelativeFluorescence.class);
-        this.iterations = prefs.getInt(PREF_ITERATIONS, this.iterations);
+        this.nIterations = prefs.getInt(PREF_ITERATIONS, this.nIterations);
         this.baselineInput = prefs.get(PREF_BASELINE, this.baselineInput);
         this.stimulusInput = prefs.get(PREF_STIMULUS, this.stimulusInput);
         this.stimNamesInput = prefs.get(PREF_STIMULUS_NAMES, this.stimNamesInput);
@@ -241,7 +316,7 @@ public class RelativeFluorescence implements PlugInFilter {
         prefs.put(PREF_BASELINE, this.baselineInput);
         prefs.put(PREF_STIMULUS, this.stimulusInput);
         prefs.put(PREF_STIMULUS_NAMES, this.stimNamesInput);
-        prefs.putInt(PREF_ITERATIONS, this.iterations);
+        prefs.putInt(PREF_ITERATIONS, this.nIterations);
         prefs.putInt(PREF_METHOD, this.method);
         prefs.putBoolean(PREF_SHOW_PLOT, this.plot);
     }
