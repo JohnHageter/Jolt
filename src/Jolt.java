@@ -17,9 +17,9 @@ import java.io.File;
 import java.io.IOException;
 
 public class Jolt {
-    private static final File cellRoiFile = new File("resources/f08_LSD/RoiSet_anno.zip");
+    private static final File cellRoiFile = new File("resources/test/CellMap_rois.zip");
     private static final File mapFile = new File("resources/f08_LSD/CellMap.tif");
-    private static final File runFile = new File("resources/f08_LSD/Substack (60-100).tif");
+    private static final File runFile = new File("resources/test/Registered.tif");
     public static void main(String[] args) throws IOException, FormatException {
         new ImageJ();
         RoiManager rm = new RoiManager();

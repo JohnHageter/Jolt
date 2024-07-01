@@ -7,6 +7,7 @@ import ij.ImageStack;
 import ij.gui.GenericDialog;
 import ij.gui.Plot;
 import ij.gui.Roi;
+import ij.io.FileInfo;
 import ij.measure.ResultsTable;
 import ij.plugin.filter.PlugInFilter;
 import ij.plugin.frame.RoiManager;
@@ -15,6 +16,7 @@ import ij.process.ImageStatistics;
 import Jolt.Utility.CellData;
 
 import java.awt.*;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
@@ -144,16 +146,36 @@ public class RelativeFluorescence implements PlugInFilter {
 
     private void outputData() {
         ResultsTable rt = new ResultsTable();
+        FileInfo iminfo = this.imp.getOriginalFileInfo();
+        String dir = iminfo.directory;
+        dir = getDir(dir);
 
         int index = 0;
         for (CellData cell : this.cellRois){
             String[] subParts = cell.breakName("_");
             rt.incrementCounter();
 
+            rt.addValue("Name", dir);
             for (String part : subParts) {
                 rt.addValue("var_" + index, part);
                 index++;
             }
+
+            int nameIdx=0;
+            String name = "";
+            String sigName = "None";
+            for (String stimPoint : this.stimPoints) {
+                String[] point = stimPoint.split("-");
+                int beginStim = strToInt(point[0]);
+                int endStim = strToInt(point[1]);
+
+                if(calcSignificance(cell, beginStim, endStim)) {
+                    sigName = name + "/" + this.stimNamesInput.split(",")[nameIdx];
+                }
+
+                nameIdx++;
+            }
+            rt.addValue("Response", sigName);
 
             for(int i = 0; i < this.imp.getStackSize() / this.nIterations; i++){
                 rt.addValue("Slice_" + (i+1), cell.getDf(i));
@@ -162,6 +184,42 @@ public class RelativeFluorescence implements PlugInFilter {
         }
         rt.show("Results");
     }
+
+    private boolean calcSignificance(CellData cell, int beginStim, int endStim) {
+        int duration = endStim-beginStim;
+        if(duration < 0) {
+            IJ.showMessage("Stimulus duration must be greater than 0 slices");
+            return false;
+        }
+
+        double df = 0;
+        for (int i = beginStim; i <= endStim; i++) {
+            df += cell.getDf()[i];
+        }
+        df = df/duration;
+
+        return df > (3 * sd(cell.getDf(), this.beginBaseline, this.endBaseline));
+
+    }
+
+    private double sd(double[] df, int beginBaseline, int endBaseline) {
+        double sum = 0.0;
+        double mean;
+        double variance = 0.0;
+
+        for (int i = beginBaseline; i<=endBaseline; i++){
+            sum += df[i];
+        }
+        mean = sum / (endBaseline-beginBaseline);
+
+        for (int i = beginBaseline; i <= endBaseline; i++){
+            variance += Math.pow(df[i] - mean, 2);
+        }
+        variance = variance / (endBaseline-beginBaseline);
+
+        return Math.sqrt(variance);
+    }
+
 
     private ArrayList<CellData> measureMultipleCells(ImagePlus imp) {
         Roi[] rois = this.rm.getRoisAsArray();
@@ -337,5 +395,34 @@ public class RelativeFluorescence implements PlugInFilter {
         int green = random.nextInt(256);
         int blue = random.nextInt(256);
         return new Color(red, green, blue);
+    }
+
+    private String getDir(String fullPath){
+        IJ.log(fullPath);
+        if(fullPath == null || fullPath.isEmpty()){
+            IJ.log("Directory empty.");
+            return "";
+        }
+
+        if(fullPath.endsWith("/") || fullPath.endsWith("\\")) {
+            fullPath = fullPath.substring(0, fullPath.length() - 1);
+        }
+
+        int lastSlash = Math.max(fullPath.lastIndexOf('/'), fullPath.lastIndexOf('\\'));
+
+        if(lastSlash != -1){
+            return fullPath.substring(lastSlash + 1);
+        }else {
+            return fullPath;
+        }
+    }
+
+    private Integer strToInt(String str){
+        try {
+            return Integer.parseInt(str);
+        } catch (NumberFormatException e) {
+            IJ.showMessage("Error", "Input must be numeric. Error in: " + str);
+            return null;
+        }
     }
 }
