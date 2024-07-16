@@ -22,62 +22,63 @@ public class Jolt {
     private static final File runFile = new File("resources/test/Registered.tif");
     public static void main(String[] args) throws IOException, FormatException {
         new ImageJ();
-        RoiManager rm = new RoiManager();
-        rm.runCommand("Open", cellRoiFile.getAbsolutePath());
-        //ImagePlus imp = IJ.openImage(mapFile.getAbsolutePath());
-        ImagePlus imp = IJ.openImage(runFile.getAbsolutePath());
-        imp.show();
+        CellManager cm = new CellManager();
+        cm.run("");
 
-        runAnalysis();
+//        RoiManager rm = new RoiManager();
+//        rm.runCommand("Open", cellRoiFile.getAbsolutePath());
+//        //ImagePlus imp = IJ.openImage(mapFile.getAbsolutePath());
+//        ImagePlus imp = IJ.openImage(runFile.getAbsolutePath());
+//        imp.show();
+//        runAnalysis();
     }
 
     //Test Functions
-    private static void runCellManager() {
-        CellManager cm = new CellManager();
-    }
-
-    private static void runAnalysis(){
-        RelativeFluorescence rf = new RelativeFluorescence();
-        rf.setup("", IJ.getImage());
-        rf.run(IJ.getProcessor());
-    }
-
-    private static void runCaPipe() {
-        ca_Pipe cP = new ca_Pipe();
-        cP.run(null);
-    }
-
-    private static void runGroupROIs(){
-        GroupROIs gR = new GroupROIs();
-        //IJ.log(cellRoiFile.getAbsolutePath());
-        gR.setup("",IJ.getImage());
-        gR.run(IJ.getProcessor());
-    }
-
-    private static void processFile() throws IOException, FormatException {
-        FileProcessor ca = new FileProcessor();
-        File run = new File("resources/f08_LSD/Run_00001.tif");
-
-        ImageReader reader = new ImageReader();
-        IMetadata metadata = MetadataTools.createOMEXMLMetadata();
-        reader.setMetadataStore((MetadataStore) metadata);
-        reader.setId(run.getAbsolutePath());
-
-        boolean isInterleaved = reader.isInterleaved();
-
-        ImporterOptions opts = new ImporterOptions();
-        opts.setId(run.getAbsolutePath());
-        opts.setSplitChannels(false);
-        opts.setOpenAllSeries(true);
-
-        ImagePlus[] imps = BF.openImagePlus(opts);
-
-        for (ImagePlus imp : imps) {
-            imp.show();
-        }
-
-        ca.setup("", IJ.getImage());
-        ca.run(null);
-    }
+//    private static void runCellManager() {
+//        CellManager cm = new CellManager();
+//    }
+//
+//    private static void runAnalysis(){
+//        RelativeFluorescence rf = new RelativeFluorescence();
+//        rf.run("");
+//    }
+//
+//    private static void runCaPipe() {
+//        ca_Pipe cP = new ca_Pipe();
+//        cP.run(null);
+//    }
+//
+//    private static void runGroupROIs(){
+//        GroupROIs gR = new GroupROIs();
+//        //IJ.log(cellRoiFile.getAbsolutePath());
+//        gR.setup("",IJ.getImage());
+//        gR.run(IJ.getProcessor());
+//    }
+//
+//    private static void processFile() throws IOException, FormatException {
+//        FileProcessor ca = new FileProcessor();
+//        File run = new File("resources/f08_LSD/Run_00001.tif");
+//
+//        ImageReader reader = new ImageReader();
+//        IMetadata metadata = MetadataTools.createOMEXMLMetadata();
+//        reader.setMetadataStore((MetadataStore) metadata);
+//        reader.setId(run.getAbsolutePath());
+//
+//        boolean isInterleaved = reader.isInterleaved();
+//
+//        ImporterOptions opts = new ImporterOptions();
+//        opts.setId(run.getAbsolutePath());
+//        opts.setSplitChannels(false);
+//        opts.setOpenAllSeries(true);
+//
+//        ImagePlus[] imps = BF.openImagePlus(opts);
+//
+//        for (ImagePlus imp : imps) {
+//            imp.show();
+//        }
+//
+//        ca.setup("", IJ.getImage());
+//        ca.run(null);
+//    }
 
 }

@@ -11,13 +11,14 @@ import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.GeneralPath;
+import java.util.ArrayList;
 import java.util.Iterator;
 
 import ij.*;
 import ij.gui.*;
 
 
-public class CellManager extends PlugInFrame implements ActionListener, ItemListener, MouseListener, MouseWheelListener, ListSelectionListener, Iterable<Roi> {
+public class CellManager extends PlugInFrame implements ActionListener, ItemListener, MouseListener, MouseWheelListener, ListSelectionListener, Iterable<CellData> {
     private static final int BUTTONS = 7;
 
     private static Frame instance;
@@ -31,6 +32,7 @@ public class CellManager extends PlugInFrame implements ActionListener, ItemList
 
     private JList cellList;
     private DefaultListModel cellListModel;
+    private ArrayList cells = new ArrayList();
     private GeneralPath savePath = new GeneralPath();
 
 
@@ -294,9 +296,43 @@ public class CellManager extends PlugInFrame implements ActionListener, ItemList
 
     }
 
+    public int getCellCount() {
+        return cellListModel!=null?cellListModel.getSize():0;
+    }
 
-    public Iterator<Roi> iterator() {
-        return null;
+    public CellData getCellData(int index) {
+        if(index<0 || index>=getCellCount()){
+            return null;
+        } return (CellData) cells.get(index);
+    }
+
+    public static CellManager getInstance(){
+            return (CellManager) instance;
+    }
+
+    public Iterator<CellData> iterator() {
+
+        Iterator<CellData> cd = new Iterator<CellData>() {
+            private int index = -1;
+            CellManager cm = CellManager.getInstance();
+            @Override
+            public boolean hasNext() {
+                if(index+1<cm.getCellCount()) {
+                return true;
+            } else {
+                return false;
+            }
+
+            @Override
+            public CellData next() {
+                    if(index+1<cm.getCellCount()){
+                        return cm.getCellData(++index);
+                    } else {
+                        return null;
+                    }
+                }
+            }
+        }
     }
 
 

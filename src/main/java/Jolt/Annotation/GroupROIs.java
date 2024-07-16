@@ -6,6 +6,7 @@ import ij.gui.DialogListener;
 import ij.gui.GenericDialog;
 import ij.gui.Roi;
 import ij.gui.WaitForUserDialog;
+import ij.io.FileInfo;
 import ij.plugin.filter.PlugInFilter;
 import ij.plugin.frame.RoiManager;
 import ij.process.ImageProcessor;
@@ -64,9 +65,9 @@ public class GroupROIs implements PlugInFilter, DialogListener {
             Roi[] cellROIs = this.rm.getRoisAsArray();
 
             for (Roi cell : cellROIs){
-                if(!cell.getName().contains("Cell_")){
+                if(!cell.getName().contains("Cell")){
                     this.rm.select(this.rm.getIndex(cell.getName()));
-                    this.rm.runCommand("Rename", "Cell_" + cellIndex + "_");
+                    this.rm.runCommand("Rename", "Cell" + cellIndex);
                     cellIndex++;
                 }
             }
@@ -93,14 +94,14 @@ public class GroupROIs implements PlugInFilter, DialogListener {
 
                 if(!named) {
                     this.rm.select(this.rm.getIndex(cell.getName()));
-                    this.rm.runCommand("Rename", cell.getName() + "NULL");
+                    this.rm.runCommand("Rename", cell.getName() + "_NULL");
                 }
             }
 
         }
 
-
-        this.rm.runCommand("Save...", IJ.getDirectory("current")+"annotated.zip");
+        FileInfo iminfo = this.imp.getFileInfo();
+        this.rm.runCommand("Save...", iminfo.directory + "/ROIset_annotated.zip");
     }
 
     private void applyGroup(String group) {
@@ -129,7 +130,7 @@ public class GroupROIs implements PlugInFilter, DialogListener {
         for (Roi cell : cellROIs) {
             if (groupingROI.contains((int) cell.getBounds().getCenterX(), (int) cell.getBounds().getCenterY())) {
                 this.rm.select(this.rm.getIndex(cell.getName()));
-                this.rm.runCommand("Rename", cell.getName() + group);
+                this.rm.runCommand("Rename", cell.getName() + "_" + group);
             }
         }
     }

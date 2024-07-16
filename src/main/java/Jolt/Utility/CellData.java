@@ -50,6 +50,10 @@ public class CellData {
         this.df = df;
     }
 
+    public void setDf(int index, double df) {
+        this.df[index] = df;
+    }
+
     public String[] breakName(String delimiter) {
         return this.getName().split(delimiter);
     }
