@@ -1,3 +1,5 @@
+package Jolt;
+
 import Jolt.Utility.CellManager;
 import ij.*;
 import ij.plugin.PlugIn;
@@ -12,5 +14,6 @@ public class Jolt implements PlugIn {
     @Override
     public void run(String arg) {
         new CellManager();
+
     }
 }

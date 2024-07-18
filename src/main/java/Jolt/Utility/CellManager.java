@@ -41,8 +41,13 @@ public class CellManager extends PlugInFrame implements ActionListener, ItemList
 
     private void showCellManager() {
         ImageJ ij = IJ.getInstance();
-        FlatOneDarkIJTheme.setup();
-        FlatInspector.install( "ctrl shift 1" );
+
+        try {
+            FlatOneDarkIJTheme.setup();
+            UIManager.setLookAndFeel(new FlatOneDarkIJTheme());
+        } catch (Exception e) {
+            IJ.log("Failed to initialize theme: " + e.getMessage());
+        }
 
         addKeyListener(ij);
         addMouseListener(this);
