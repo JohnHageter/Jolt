@@ -1,8 +1,10 @@
 package Jolt.Utility;
 
-import Jolt.Annotation.GroupROIs;
-import Jolt.Annotation.SelectMultiple;
-import Jolt.Processing.FileProcessor;
+import com.formdev.flatlaf.extras.FlatInspector;
+import com.formdev.flatlaf.intellijthemes.FlatOneDarkIJTheme;
+import ij.IJ;
+import ij.ImageJ;
+import ij.WindowManager;
 import ij.plugin.frame.PlugInFrame;
 
 import javax.swing.*;
@@ -10,332 +12,181 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.GeneralPath;
-import java.util.ArrayList;
 import java.util.Iterator;
 
-import ij.*;
-import ij.gui.*;
-
-
 public class CellManager extends PlugInFrame implements ActionListener, ItemListener, MouseListener, MouseWheelListener, ListSelectionListener, Iterable<CellData> {
-    private static final int BUTTONS = 7;
-
     private static Frame instance;
-    private Panel panel;
-    private JPanel buttonPanel;
-    private PopupMenu popupMenu;
-    private JTabbedPane cellTabs;
-    private Button moreButton;
-    private JPanel cellGroups;
-    private JPanel cellsInd;
-
+    private static String errorMessage;
     private JList cellList;
-    private DefaultListModel cellListModel;
-    private ArrayList cells = new ArrayList();
-    private GeneralPath savePath = new GeneralPath();
+    private int nButtons = 0;
+    private GridBagLayout layout = new GridBagLayout();
+    private static JPanel panel = new JPanel();
+    private static GridBagConstraints gbc = new GridBagConstraints();
+    private boolean allowRecording;
 
-
-    public String errorMsg;
 
     public CellManager() {
         super("Cell Manager");
-        if(instance != null) {
+        if (instance != null) {
             WindowManager.toFront(instance);
             return;
         }
 
         instance = this;
         cellList = new JList();
-        errorMsg = null;
-        showWindow();
+        errorMessage = null;
+        showCellManager();
 
     }
 
-    private void showWindow() {
+    private void showCellManager() {
         ImageJ ij = IJ.getInstance();
+        FlatOneDarkIJTheme.setup();
+        FlatInspector.install( "ctrl shift 1" );
+
         addKeyListener(ij);
         addMouseListener(this);
         addMouseWheelListener(this);
-        WindowManager.addWindow(this);
+        WindowManager.addWindow(this);;
 
-        setLayout(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
+        panel.setLayout(layout);
 
-        { // Initialize list of cell entities
-            cellListModel = new DefaultListModel<>();
-            cellList.setModel(cellListModel);
-            GUI.scale(cellList);
-            cellList.setPrototypeCellValue("0000-0000-0000");
-            cellList.addListSelectionListener(this);
-            cellList.addKeyListener(ij);
-            cellList.addMouseWheelListener(this);
-            cellList.addMouseListener(this);
-        }
+        addButton("Register",       2,0,1,1);
+        addButton("Apply group(s)", 2,1,1,1);
+        addButton("Select multiple",2,2,1,1);
+        addButton("Analyze",        2,3,1,1);
+        addButton("Area analysis",  2,4,1,1);
+        addButton("Load",           2,5,1,1);
+        addButton("Save",           2,6,1,1);
+        addButton("More...",        2,8,1,1);
 
-        panel = new Panel();
-        panel.setLayout(new BorderLayout());
+        addButton("Cells", 0, nButtons, 1,1); nButtons--;
+        addButton("Groups", 1, nButtons, 1,1); nButtons--;
 
-        { // add group tabs to panel
-            cellTabs = new JTabbedPane();
-            cellGroups = new JPanel();
-            cellGroups.setLayout(new BorderLayout());
-            cellGroups.add(new JScrollPane(), BorderLayout.WEST);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth= 2;
+        gbc.gridheight = nButtons;
 
-            cellsInd = new JPanel();
-            cellsInd.setLayout(new BorderLayout());
-            cellsInd.add(new JScrollPane(), BorderLayout.WEST);
+        JScrollPane roiPane = new JScrollPane(cellList, ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        layout.setConstraints(roiPane, gbc);
+        panel.add(roiPane, gbc);
 
-            cellTabs.add("Groups", cellGroups);
-            cellTabs.add("Cells", cellsInd);
-
-            cellTabs.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    if (e.getClickCount() == 2) {
-                        int tabIndex = cellTabs.getSelectedIndex();
-                        if (tabIndex != -1) {
-                            String newTabName = JOptionPane.showInputDialog(panel, "Enter new name for tab:", cellTabs.getTitleAt(tabIndex));
-                            if (newTabName != null && !newTabName.trim().isEmpty()) {
-                                cellTabs.setTitleAt(tabIndex, newTabName.trim());
-                            }
-                        }
-                    }
-                }
-            });
-
-            panel.add(cellTabs, BorderLayout.CENTER);
-        }
-
-        { // add buttons to panel
-            buttonPanel = new JPanel();
-            buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
-            addButton("Add cell [t]");
-            addButton("Remove cell [x]");
-            addButton("Add group");
-            addButton("Remove group");
-            addButton("Open...");
-            addButton("Save...");
-            addButton("Rename");
-            addButton("More...");
-            addMoreMenu();
-            GUI.scale(this);
-        }
-
-        { // add panels to frame
-            gbc.gridx = 0;
-            gbc.gridy = 0;
-            gbc.weightx = 0.90;
-            gbc.weighty = 1.0;
-            gbc.fill = GridBagConstraints.BOTH;
-            add(panel, gbc);
-
-            gbc.gridx = 1;
-            gbc.gridy = 0;
-            gbc.weightx = 0.10;
-            gbc.weighty = 1.0;
-            gbc.fill = GridBagConstraints.BOTH;
-            add(buttonPanel, gbc);
-        }
-
-        setSize(400, 400);
-        setVisible(true);
+        this.add(panel);
+        this.pack();
+        this.setVisible(true);
     }
 
-    void addMoreMenu(){
-        popupMenu = new PopupMenu();
-        GUI.scalePopupMenu(popupMenu);
-        addMoreMenuItem("Process stack series");
-        addMoreMenuItem("Multi-select annotate");
-        addMoreMenuItem("Group-select annotate");
-        addMoreMenuItem("Measure multiple");
-        add(popupMenu);
-    }
+    void addButton(String name, int gridx, int gridy, int gridwidth, int gridheight) {
+        gbc.gridx = gridx;
+        gbc.gridy = gridy;
 
-    void addMoreMenuItem(String s){
-        MenuItem mItem = new MenuItem(s);
-        mItem.addActionListener(this);
-        popupMenu.add(mItem);
-    }
+        gbc.gridwidth = gridwidth;
+        gbc.gridheight = gridheight;
 
-    void addButton(String label) {
-        Button b = new Button(label);
+        gbc.fill = GridBagConstraints.BOTH;
+        JButton b = new JButton(name);
         b.addActionListener(this);
         b.addKeyListener(IJ.getInstance());
-        if (label.equals("More...")) moreButton = b;
         b.addMouseListener(this);
-        buttonPanel.add(b);
+        panel.add(b, gbc);
+        nButtons++;
     }
 
-    private void addNewGroupTab() {
-        int groupCount = cellTabs.getTabCount() - 1;
-        JPanel newGroupPanel = new JPanel(new BorderLayout());
-        newGroupPanel.add(new JScrollPane(), BorderLayout.WEST);
-        cellTabs.add("Group " + (groupCount + 1), newGroupPanel);
-    }
-
-    private void removeGroupTab() {
-        int groupIndex = cellTabs.getSelectedIndex();
-        cellTabs.remove(groupIndex);
-    }
-
-//    addButton("Add cell [t]");
-//    addButton("Remove cell [x]");
-//    addButton("Add group");
-//    addButton("Remove group");
-//    addButton("Open...");
-//    addButton("Save...");
-//    addButton("Rename");
-//    addButton("More...");
-//    addMoreMenuItem("Process stack series");
-//    addMoreMenuItem("Multi-select annotate");
-//    addMoreMenuItem("Group-select annotate");
-//    addMoreMenuItem("Measure multiple");
-
+    @Override
     public void actionPerformed(ActionEvent e) {
-        String command = e.getActionCommand();
-        switch (command) {
-            case "Add group":
-                addNewGroupTab();
+        String label = e.getActionCommand();
+        if (label == null) {
+            return;
+        }
+        allowRecording = true;
+
+
+//        addButton("Register",       2,0,1,1);
+//        addButton("Apply group(s)", 2,1,1,1);
+//        addButton("Select multiple",2,2,1,1);
+//        addButton("Analyze",        2,3,1,1);
+//        addButton("Area analysis",  2,4,1,1);
+//        addButton("Load",           2,5,1,1);
+//        addButton("Save",           2,6,1,1);
+//        addButton("More...",        2,8,1,1);
+//
+//        addButton("Cells", 0, nButtons, 1,1); nButtons--;
+//        addButton("Groups", 1, nButtons, 1,1); nButtons--;
+
+
+        switch (label) {
+            case "Register":
+                IJ.log("Register");
                 break;
-            case "Remove group":
-                removeGroupTab();
+            case "Apply group(s)":
+                IJ.log("Apply group(s)");
                 break;
-            case "Add cell [t]":
-                IJ.log("Cant do that yet");
+            case "Select multiple":
+                IJ.log("Select multiple");
                 break;
-            case "Remove cell [x]":
-                IJ.log("Cant do that yet");
+            case "Analyze":
+                IJ.log("Analyze");
                 break;
-            case "Open...":
-                IJ.open();
+            case "Area analysis":
+                IJ.log("Area analysis");
                 break;
-            case "Save...":
-                if(cellList.getModel().getSize() == 0){
-                    error("Cell list is empty");
-                    break;
-                } else if (cellList.getModel().getSize() > 0){
-                    IJ.save(null);
-                }
+            case "Load":
+                IJ.log("Load");
                 break;
-            case "Rename":
-                IJ.log("not implemented");
-                cellList.getSelectedIndex();
+            case "Save":
+                IJ.log("Save");
                 break;
             case "More...":
-                Point ploc = buttonPanel.getLocation();
-                Point bloc = moreButton.getLocation();
-                popupMenu.show(this, ploc.x, bloc.y);
-                break;
-            case "Process stack series":
-                //TODO Figure out why align slices halts at waitforuserdialog
-                if(IJ.getImage() != null) {
-                    FileProcessor fP = new FileProcessor();
-                    fP.setup("", IJ.getImage());
-                    fP.run(IJ.getImage().getProcessor());
-                } else {
-                    IJ.noImage();
-                }
-                break;
-            case "Multi-select annotate":
-                SelectMultiple sP = new SelectMultiple();
-                sP.run("");
-                break;
-            case "Group-select annotate":
-                runGroupAnnotate(IJ.getImage());
-                break;
-            case "Measure multiple":
+                IJ.log("More...");
                 break;
             default:
-                break;
+                throw new IllegalStateException("Unexpected value: " + label);
         }
-    }
-
-    private void runGroupAnnotate(ImagePlus image) {
-        if(image != null){
-            GroupROIs gR = new GroupROIs();
-            gR.setup("", image);
-            gR.run(image.getProcessor());
-        } else {
-            IJ.noImage();
-        }
-    }
-
-    boolean error(String msg) {
-        new MessageDialog(this, "Cell Manager", msg);
-        Macro.abort();
-        return false;
-    }
-
-    public void mouseClicked(MouseEvent e) {
 
     }
 
-    public void mousePressed(MouseEvent e) {
-
-    }
-
-    public void mouseReleased(MouseEvent e) {
-
-    }
-
-    public void mouseEntered(MouseEvent e) {
-
-    }
-
-    public void mouseExited(MouseEvent e) {
-
-    }
-
-    public void mouseWheelMoved(MouseWheelEvent e) {
-
-    }
-
-
+    @Override
     public void itemStateChanged(ItemEvent e) {
 
     }
 
-    public int getCellCount() {
-        return cellListModel!=null?cellListModel.getSize():0;
+    @Override
+    public void mouseClicked(MouseEvent e) {
+
     }
 
-    public CellData getCellData(int index) {
-        if(index<0 || index>=getCellCount()){
-            return null;
-        } return (CellData) cells.get(index);
+    @Override
+    public void mousePressed(MouseEvent e) {
+
     }
 
-    public static CellManager getInstance(){
-            return (CellManager) instance;
+    @Override
+    public void mouseReleased(MouseEvent e) {
+
     }
 
+    @Override
+    public void mouseEntered(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseWheelMoved(MouseWheelEvent e) {
+
+    }
+
+    @Override
     public Iterator<CellData> iterator() {
-
-        Iterator<CellData> cd = new Iterator<CellData>() {
-            private int index = -1;
-            CellManager cm = CellManager.getInstance();
-            @Override
-            public boolean hasNext() {
-                if(index+1<cm.getCellCount()) {
-                return true;
-            } else {
-                return false;
-            }
-
-            @Override
-            public CellData next() {
-                    if(index+1<cm.getCellCount()){
-                        return cm.getCellData(++index);
-                    } else {
-                        return null;
-                    }
-                }
-            }
-        }
+        return null;
     }
 
-
+    @Override
     public void valueChanged(ListSelectionEvent e) {
 
     }
