@@ -145,6 +145,12 @@ public class CellManager extends PlugInFrame implements ActionListener, ItemList
             case "More...":
                 IJ.log("More...");
                 break;
+            case "Groups":
+                IJ.log("Switch to group tab");
+                break;
+            case "Cells":
+                IJ.log("Switch to Cell tab");
+                break;
             default:
                 throw new IllegalStateException("Unexpected value: " + label);
         }

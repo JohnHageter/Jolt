@@ -8,6 +8,13 @@
     <artifactId>Jolt</artifactId>
     <version>1.0</version>
 
+    <repositories>
+        <repository>
+            <id>local_repo</id>
+            <url>file://${pom.basedir}/include</url>
+        </repository>
+    </repositories>
+
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
@@ -25,41 +32,13 @@
             <artifactId>guava</artifactId>
             <version>32.0.0-jre</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.opencb.commons/bioformats -->
         <dependency>
-            <groupId>com.example</groupId>
-            <artifactId>stack-manipulation</artifactId>
-            <version>2.1.2</version>
+            <groupId>org.opencb.commons</groupId>
+            <artifactId>bioformats</artifactId>
+            <version>2.0.0</version>
         </dependency>
-        <dependency>
-            <groupId>com.example</groupId>
-            <artifactId>template-matching</artifactId>
-            <version>1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.example</groupId>
-            <artifactId>bioformats-package</artifactId>
-            <version>1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.bytedeco</groupId>
-            <artifactId>javacpp</artifactId>
-            <version>1.5.6</version>
-        </dependency>
-        <dependency>
-            <groupId>org.bytedeco</groupId>
-            <artifactId>javacv</artifactId>
-            <version>1.5.6</version>
-        </dependency>
-        <dependency>
-            <groupId>org.opencv</groupId>
-            <artifactId>opencv-windows-x86_64</artifactId>
-            <version>4.5.3</version>
-        </dependency>
-        <dependency>
-            <groupId>org.opencv</groupId>
-            <artifactId>opencv</artifactId>
-            <version>4.5.3</version>
-        </dependency>
+
         <dependency>
             <groupId>com.formdev</groupId>
             <artifactId>flatlaf</artifactId>
@@ -74,6 +53,39 @@
             <groupId>com.formdev</groupId>
             <artifactId>flatlaf-extras</artifactId>
             <version>3.5</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.bytedeco/javacpp -->
+
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>javacv</artifactId>
+            <version>1.5.6</version>
+            <scope>system</scope>
+            <systemPath>${pom.basedir}/include/javacv.jar</systemPath>
+        </dependency>
+
+        <dependency>
+            <groupId>com.opencv</groupId>
+            <artifactId>opencv</artifactId>
+            <version>1.5.6</version>
+            <scope>system</scope>
+            <systemPath>${pom.basedir}/include/opencv-windows-x86_64.jar</systemPath>
+        </dependency>
+
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>javacpp</artifactId>
+            <version>1.5.6</version>
+            <scope>system</scope>
+            <systemPath>${pom.basedir}/include/javacpp.jar</systemPath>
+        </dependency>
+
+        <dependency>
+            <groupId>com.templatematching</groupId>
+            <artifactId>Template_Matching</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${pom.basedir}/include/Template_Matching.jar</systemPath>
         </dependency>
 
     </dependencies>
